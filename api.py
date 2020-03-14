@@ -1,6 +1,10 @@
 from flask import Flask, escape, request
 from flask_cors import CORS
 import cv2 
+import utils
+
+import time
+
 app = Flask(__name__, static_url_path="")
 CORS(app, resources={r"/*": {"origins": "*"}})
 
@@ -11,7 +15,9 @@ def hello():
 
 links = {
     "lr_video_route": '',
-    "hr_video_route": ''
+    "hr_video_route": '',
+    "future_hr_path": '',
+    "name": ""
 }
 
 video_info = {}
@@ -21,20 +27,22 @@ def post_video():
     video = request.files['file']
     video.save(f'./static/videos/lr_{video.filename}')
     links["lr_video_route"] = f'/videos/lr_{video.filename}'
-
-    # TODO
-    video.save(f'./static/videos/hr_{video.filename}')
+    links["future_hr_path"] = f'/videos/hr_{video.filename}'
 
     lr_video = cv2.VideoCapture(f'./static/videos/lr_{video.filename}')
     video_info = {
         "fps": lr_video.get(cv2.CAP_PROP_FPS),
-        "width": lr_video.get(cv2.CAP_PROP_FRAME_WIDTH),  # float
-        "height": lr_video.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        "width": lr_video.get(cv2.CAP_PROP_FRAME_WIDTH),
+        "height": lr_video.get(cv2.CAP_PROP_FRAME_HEIGHT),
+        "name": video.filename
     }
-    print(video_info)
+    images = utils.FrameCapture(lr_video)
 
-    # TODO
-    links["hr_video_route"] = f'/videos/lr_{video.filename}'
+    # TODO SR
+    hr_images = images
+
+    utils.makevideo(hr_images, f'./static/videos/hr_{video_info["name"]}', video_info)
+    links["hr_video_route"] = links["future_hr_path"]
     return "200"
 
 
